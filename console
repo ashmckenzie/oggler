@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'pry'
+require_relative './lib/oggler'
+
+class NoxNotifier
+
+  def initialize state
+    @state = state
+  end
+
+  def process
+    puts "The current state is: #{state}"
+  end
+
+  private
+
+  attr_reader :state
+end
+
+module Features
+  class Nox# < Oggler::FeatureBase
+
+    extend Oggler::Feature
+
+    class << self
+      def valid?
+        raise 'Nox cannot be setup in Production' if ENV['RAILS_ENV'] == 'production'
+      end
+
+      def commands
+        [ Proc.new { ::NoxNotifier.new(current_state).process } ]
+      end
+    end
+  end
+end
+
+redis_store = Oggler::Store::Redis.new(Redis.new(host: 'localhost', db: 10))
+Oggler::Toggler.instance.use_store!(redis_store)
+
+pry
